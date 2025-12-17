@@ -11,7 +11,7 @@ const jwt = require('jsonwebtoken');
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  // Validation
+  // 1️⃣ Validation
   if (!email || !password) {
     return res.status(400).json({
       error: 'Email and password required'
@@ -19,6 +19,7 @@ router.post('/login', async (req, res) => {
   }
 
   try {
+    // 2️⃣ Fetch user
     const result = await pool.query(
       `
       SELECT
@@ -32,7 +33,7 @@ router.post('/login', async (req, res) => {
       FROM users
       WHERE email = $1
       `,
-      [email]
+      [email.trim().toLowerCase()]
     );
 
     if (result.rows.length === 0) {
@@ -43,15 +44,27 @@ router.post('/login', async (req, res) => {
 
     const user = result.rows[0];
 
-    // Important: trim() fixes hidden whitespace issues
-    const passwordHash = user.password.trim();
+    // 3️⃣ Validate password hash
+    if (!user.password || !user.password.startsWith('$2')) {
+      console.error('Invalid password hash for user:', user.email);
+      return res.status(401).json({
+        error: 'Invalid credentials'
+      });
+    }
 
-    const isMatch = await bcrypt.compare(password, passwordHash);
+    // 4️⃣ Compare password
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password.trim()
+    );
 
-if (!isMatch) {
-  return res.status(401).json({ error: 'Invalid credentials' });
-}
+    if (!isMatch) {
+      return res.status(401).json({
+        error: 'Invalid credentials'
+      });
+    }
 
+    // 5️⃣ Create JWT
     const token = jwt.sign(
       {
         user_id: user.id,
@@ -61,11 +74,12 @@ if (!isMatch) {
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: process.env.JWT_EXPIRES_IN || '12h'
+        expiresIn: '12h' // hardcoded = safest
       }
     );
 
-    res.json({
+    // 6️⃣ Success response
+    return res.json({
       success: true,
       token,
       user: {
@@ -80,7 +94,7 @@ if (!isMatch) {
 
   } catch (err) {
     console.error('Staff login error:', err);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Login failed'
     });
   }
