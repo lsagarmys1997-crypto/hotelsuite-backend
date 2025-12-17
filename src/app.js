@@ -3,8 +3,9 @@ const express = require('express');
 const cors = require('cors');
 
 const pool = require('./db');
-const guestTicketsRoutes = require('./routes/guestTickets');
 const guestAuthRoutes = require('./routes/guestAuth.routes');
+const guestTicketsRoutes = require('./routes/guestTickets');
+const staffAuthRoutes = require('./routes/staffAuth.routes');
 
 const app = express();
 app.use(cors());
@@ -33,6 +34,9 @@ app.get('/db-test', async (req, res) => {
  * Guest auth
  */
 app.use('/api/guest', guestAuthRoutes);
+// Guest tickets
 app.use('/api/guest/tickets', guestTicketsRoutes);
+// Staff auth
+app.use('/api/staff', staffAuthRoutes);
 
 module.exports = app;
