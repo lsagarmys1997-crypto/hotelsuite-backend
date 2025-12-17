@@ -3,7 +3,9 @@ const express = require('express');
 const cors = require('cors');
 
 const pool = require('./db');
+const guestTicketsRoutes = require('./routes/guestTickets');
 const guestAuthRoutes = require('./routes/guestAuth.routes');
+app.use('/api/guest/tickets', guestTicketsRoutes);
 
 const app = express();
 app.use(cors());
