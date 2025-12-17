@@ -8,11 +8,6 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   console.log('LOGIN ATTEMPT EMAIL:', email);
-  console.log('DB URL:', process.env.DATABASE_URL);
-  console.log('PLAIN PASSWORD:', password);
-  console.log('HASH FROM DB:', hash);
-  console.log('HASH LENGTH:', hash.length);
-
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password required' });
@@ -23,17 +18,23 @@ router.post('/login', async (req, res) => {
       `SELECT id, hotel_id, name, email, password, role, department
        FROM users
        WHERE email = $1`,
-      [email.trim()]
+      [email.trim().toLowerCase()]
     );
 
     if (result.rows.length === 0) {
+      console.log('❌ User not found');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const user = result.rows[0];
     const hash = user.password.trim();
 
+    console.log('HASH FROM DB:', hash);
+    console.log('HASH LENGTH:', hash.length);
+
     const isMatch = await bcrypt.compare(password, hash);
+
+    console.log('PASSWORD MATCH:', isMatch);
 
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
