@@ -48,19 +48,9 @@ router.post('/login', async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, passwordHash);
 
-console.log('LOGIN DEBUG ----------------');
-console.log('EMAIL:', email);
-console.log('INPUT PASSWORD:', password);
-console.log('DB HASH:', passwordHash);
-console.log('MATCH RESULT:', isMatch);
-console.log('-----------------------------');
-
 if (!isMatch) {
-  return res.status(401).json({
-    error: 'Invalid credentials'
-  });
+  return res.status(401).json({ error: 'Invalid credentials' });
 }
-
 
     const token = jwt.sign(
       {
