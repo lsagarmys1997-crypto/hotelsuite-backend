@@ -7,9 +7,7 @@ const jwt = require('jsonwebtoken');
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  console.log('LOGIN ATTEMPT EMAIL:', email);
-
-  if (!email || !password) {
+    if (!email || !password) {
     return res.status(400).json({ error: 'Email and password required' });
   }
 
@@ -29,13 +27,8 @@ router.post('/login', async (req, res) => {
     const user = result.rows[0];
     const hash = user.password.trim();
 
-    console.log('HASH FROM DB:', hash);
-    console.log('HASH LENGTH:', hash.length);
-
     const isMatch = await bcrypt.compare(password, hash);
-
-    console.log('PASSWORD MATCH:', isMatch);
-
+     
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
