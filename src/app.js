@@ -2,8 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-const app = express();
+const pool = require('./db');
+const guestAuthRoutes = require('./routes/guestAuth.routes');
 
+const app = express();
 app.use(cors());
 app.use(express.json());
 
@@ -15,9 +17,8 @@ app.get('/', (req, res) => {
 });
 
 /**
- * DB test (keep this forever for debugging)
+ * DB test (keep permanently)
  */
-const pool = require('./db');
 app.get('/db-test', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
@@ -26,5 +27,10 @@ app.get('/db-test', async (req, res) => {
     res.status(500).json({ db: 'error', message: err.message });
   }
 });
+
+/**
+ * Guest auth
+ */
+app.use('/api/guest', guestAuthRoutes);
 
 module.exports = app;
