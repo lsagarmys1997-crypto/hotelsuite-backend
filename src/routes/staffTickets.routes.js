@@ -4,8 +4,10 @@ const pool = require('../db');
 const staffAuth = require('../middleware/staffAuth');
 
 /**
+ * =========================================
  * GET /api/staff/tickets
- * Staff ticket queue
+ * Staff ticket queue (open + in_progress)
+ * =========================================
  */
 router.get('/', staffAuth, async (req, res) => {
   const { hotel_id, department, role } = req.staff;
@@ -49,6 +51,51 @@ router.get('/', staffAuth, async (req, res) => {
     console.error(err);
     res.status(500).json({
       error: 'Failed to fetch tickets'
+    });
+  }
+});
+
+/**
+ * ==================================================
+ * PATCH /api/staff/tickets/:id/status
+ * Staff accepts / closes ticket
+ * ==================================================
+ */
+router.patch('/:id/status', staffAuth, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const { hotel_id, id: staff_id } = req.staff;
+
+  const allowedStatus = ['open', 'in_progress', 'closed'];
+  if (!allowedStatus.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      UPDATE tickets
+      SET status = $1,
+          assigned_to = $2
+      WHERE id = $3
+        AND hotel_id = $4
+      RETURNING id, status
+      `,
+      [status, staff_id, id, hotel_id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    res.json({
+      success: true,
+      ticket: result.rows[0]
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: 'Failed to update ticket status'
     });
   }
 });
