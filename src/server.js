@@ -4,34 +4,50 @@ const cors = require('cors');
 
 const app = express();
 
-// Middleware
+/* =====================
+   Global Middleware
+===================== */
 app.use(cors());
 app.use(express.json());
 
-// Routes
+/* =====================
+   Route Imports
+===================== */
 const guestAuthRoutes = require('./routes/guestAuth.routes');
-const guestTicketsRoutes = require('./routes/guestTickets');
+const guestTicketsRoutes = require('./routes/guestTickets.routes');
 const staffAuthRoutes = require('./routes/staffAuth.routes');
 const staffTicketsRoutes = require('./routes/staffTickets.routes');
 
-// Health check
+/* =====================
+   Health Check
+===================== */
 app.get('/health', (req, res) => {
   res.json({ alive: true });
 });
 
-// Mount routes
+/* =====================
+   API Routes
+===================== */
+
+// Guest APIs
 app.use('/api/guest', guestAuthRoutes);
 app.use('/api/guest/tickets', guestTicketsRoutes);
+
+// Staff APIs
 app.use('/api/staff', staffAuthRoutes);
 app.use('/api/staff/tickets', staffTicketsRoutes);
 
-// Root
+/* =====================
+   Root
+===================== */
 app.get('/', (req, res) => {
   res.json({ status: 'HotelSuite backend running' });
 });
 
-// Start server
+/* =====================
+   Start Server
+===================== */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 HotelSuite backend running on port ${PORT}`);
 });
