@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
  * POST /api/staff/login
  * Staff login (PRODUCTION)
  */
+console.log("DB URL:", process.env.DATABASE_URL);
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
