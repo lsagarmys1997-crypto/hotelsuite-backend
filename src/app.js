@@ -1,13 +1,5 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
+const guestAuthRoutes = require('./routes/guestAuth.routes');
+const ticketRoutes = require('./routes/ticket.routes');
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-app.get('/', (req, res) => {
-  res.json({ status: 'HotelSuite backend running' });
-});
-
-module.exports = app;
+app.use('/api/guest', guestAuthRoutes);
+app.use('/api/tickets', ticketRoutes);
