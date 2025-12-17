@@ -5,13 +5,60 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 /**
+ * TEMPORARY: Reset staff password
+ * REMOVE THIS ROUTE AFTER SUCCESS
+ * POST /api/staff/reset-password
+ */
+router.post('/reset-password', async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    return res.status(400).json({
+      error: 'Email and newPassword required'
+    });
+  }
+
+  try {
+    // Generate bcrypt hash INSIDE backend
+    const hash = await bcrypt.hash(newPassword, 10);
+
+    const result = await pool.query(
+      `
+      UPDATE users
+      SET password = $1
+      WHERE email = $2
+      RETURNING email
+      `,
+      [hash, email]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        error: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully'
+    });
+
+  } catch (err) {
+    console.error('Password reset error:', err);
+    res.status(500).json({
+      error: 'Password reset failed'
+    });
+  }
+});
+
+/**
  * POST /api/staff/login
- * Staff login
+ * Staff login (PRODUCTION)
  */
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  // Basic validation
+  // Validation
   if (!email || !password) {
     return res.status(400).json({
       error: 'Email and password required'
@@ -19,7 +66,6 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    // Fetch user
     const result = await pool.query(
       `
       SELECT
@@ -44,10 +90,9 @@ router.post('/login', async (req, res) => {
 
     const user = result.rows[0];
 
-    // 🔑 IMPORTANT: trim() fixes hidden whitespace from DB
+    // Important: trim() fixes hidden whitespace issues
     const passwordHash = user.password.trim();
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, passwordHash);
 
     if (!isMatch) {
@@ -56,7 +101,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Create JWT
     const token = jwt.sign(
       {
         user_id: user.id,
@@ -70,7 +114,6 @@ router.post('/login', async (req, res) => {
       }
     );
 
-    // Success
     res.json({
       success: true,
       token,
