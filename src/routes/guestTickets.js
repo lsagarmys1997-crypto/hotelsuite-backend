@@ -3,6 +3,10 @@ const router = express.Router();
 const pool = require('../db');
 const guestAuth = require('../middleware/guestAuth');
 
+router.get('/', staffAuth, async (req, res) => {
+  const { hotel_id, role, department } = req.staff;
+  ...
+});
 /**
  * POST /api/guest/tickets
  * Guest creates a service request
