@@ -40,8 +40,6 @@ app.use('/api/guest/tickets', guestTicketsRoutes);
 // Staff auth
 app.use('/api/staff', staffAuthRoutes);
 // Staff tickets (queue)
-app.get('/api/staff/tickets-test', (req, res) => {
-  res.json({ ok: true });
-});
+app.use('/api/staff/tickets', staffTicketsRoutes);
 
 module.exports = app;
