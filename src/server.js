@@ -14,7 +14,7 @@ app.use(express.json());
    Route Imports
 ===================== */
 const guestAuthRoutes = require('./routes/guestAuth.routes');
-const guestTicketsRoutes = require('./routes/guestTickets.routes');
+const guestTickets = require('./routes/guestTickets');
 const staffAuthRoutes = require('./routes/staffAuth.routes');
 const staffTicketsRoutes = require('./routes/staffTickets.routes');
 
@@ -31,7 +31,7 @@ app.get('/health', (req, res) => {
 
 // Guest APIs
 app.use('/api/guest', guestAuthRoutes);
-app.use('/api/guest/tickets', guestTicketsRoutes);
+app.use('/api/guest/tickets', guestTickets);
 
 // Staff APIs
 app.use('/api/staff', staffAuthRoutes);
