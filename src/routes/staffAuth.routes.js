@@ -9,6 +9,10 @@ router.post('/login', async (req, res) => {
 
   console.log('LOGIN ATTEMPT EMAIL:', email);
   console.log('DB URL:', process.env.DATABASE_URL);
+  console.log('PLAIN PASSWORD:', password);
+  console.log('HASH FROM DB:', hash);
+  console.log('HASH LENGTH:', hash.length);
+
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password required' });
