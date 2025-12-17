@@ -1,54 +1,63 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const guestAuth = require('../middleware/guestAuth');
 
-router.get('/', staffAuth, async (req, res) => {
-  const { hotel_id, role, department } = req.staff;
-  ...
-});
 /**
  * POST /api/guest/tickets
- * Guest creates a service request
+ * Guest creates a ticket
  */
-router.post('/', guestAuth, async (req, res) => {
-  const { department, title, description, priority } = req.body;
+router.post('/', async (req, res) => {
+  const {
+    hotel_id,
+    room_number,
+    department,
+    title,
+    description,
+    priority,
+    guest_name
+  } = req.body;
 
-  // From JWT
-  const { guest_id, room_id, hotel_id } = req.guest;
-
-  if (!department) {
+  // Validation
+  if (!hotel_id || !room_number || !department || !title) {
     return res.status(400).json({
-      error: 'department is required'
+      error: 'Missing required fields'
     });
   }
 
   try {
     const result = await pool.query(
       `
-      INSERT INTO tickets
-        (hotel_id, room_id, guest_id, department, title, description, priority)
-      VALUES
-        ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id, status, created_at
+      INSERT INTO tickets (
+        hotel_id,
+        room_number,
+        department,
+        title,
+        description,
+        priority,
+        guest_name,
+        status
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,'open')
+      RETURNING *
       `,
       [
         hotel_id,
-        room_id,
-        guest_id,
+        room_number,
         department,
-        title || null,
-        description || null,
-        priority || 'normal'
+        title,
+        description || '',
+        priority || 'normal',
+        guest_name || 'Guest'
       ]
     );
 
-    res.json({
-      message: 'Ticket created successfully',
+    res.status(201).json({
+      success: true,
       ticket: result.rows[0]
     });
-  } catch (error) {
-    console.error(error);
+
+  } catch (err) {
+    console.error('Guest ticket error:', err);
     res.status(500).json({
       error: 'Failed to create ticket'
     });
