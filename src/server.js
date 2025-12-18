@@ -21,7 +21,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/guest', guestAuthRoutes);
-app.use('/api/guest/tickets', guestTicketsRoutes);
+app.use('/api/guest/tickets', guestTickets);
 
 app.use('/api/staff', staffAuthRoutes);
 app.use('/api/staff/tickets', staffTicketsRoutes);
