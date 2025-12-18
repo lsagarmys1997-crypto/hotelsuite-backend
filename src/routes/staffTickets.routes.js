@@ -1,60 +1,61 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const authenticate = require('../middleware/staffAuth');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-router.get('/', authenticate, async (req, res) => {
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password required' });
+  }
+
   try {
-    const { role, department, hotel_id } = req.user;
+    const result = await pool.query(
+      `SELECT id, hotel_id, name, email, password, role, department
+       FROM users
+       WHERE email = $1`,
+      [email.trim()]
+    );
 
-    let query;
-    let values;
-
-    if (role === 'admin') {
-      query = `
-        SELECT
-          t.id,
-          t.title,
-          t.description,
-          t.status,
-          t.priority,
-          r.room_number,
-          g.name AS guest_name
-        FROM tickets t
-        LEFT JOIN rooms r ON t.room_id = r.id
-        LEFT JOIN guests g ON t.guest_id = g.id
-        WHERE t.hotel_id = $1
-        ORDER BY t.created_at DESC
-      `;
-      values = [hotel_id];
-    } else {
-      query = `
-        SELECT
-          t.id,
-          t.title,
-          t.description,
-          t.status,
-          t.priority,
-          r.room_number,
-          g.name AS guest_name
-        FROM tickets t
-        LEFT JOIN rooms r ON t.room_id = r.id
-        LEFT JOIN guests g ON t.guest_id = g.id
-        WHERE t.hotel_id = $1
-          AND t.department = $2
-        ORDER BY t.created_at DESC
-      `;
-      values = [hotel_id, department];
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const result = await pool.query(query, values);
+    const user = result.rows[0];
+    const isMatch = await bcrypt.compare(password, user.password.trim());
 
-    res.json({ tickets: result.rows });
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
+    const token = jwt.sign(
+      {
+        user_id: user.id,
+        hotel_id: user.hotel_id,
+        role: user.role,
+        department: user.department
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '12h' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department
+      }
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to fetch tickets' });
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
-module.exports = router;
+module.exports = router;   // 🔴 THIS LINE IS CRITICAL
