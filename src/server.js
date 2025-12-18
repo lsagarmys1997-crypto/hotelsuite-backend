@@ -11,10 +11,4 @@ const guestTicketsRoutes = require('./routes/guestTickets');
 const staffAuthRoutes = require('./routes/staffAuth.routes');
 const staffTicketsRoutes = require('./routes/staffTickets.routes');
 
-// 🔥 HARD DEBUG (DO NOT SKIP)
-console.log('guestAuthRoutes:', guestAuthRoutes);
-console.log('guestTicketsRoutes:', guestTicketsRoutes);
-console.log('staffAuthRoutes:', staffAuthRoutes);
-console.log('staffTicketsRoutes:', staffTicketsRoutes);
-
 process.exit(1); // ⛔ STOP APP HERE
