@@ -7,31 +7,25 @@ const jwt = require('jsonwebtoken');
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-    if (!email || !password) {
+  if (!email || !password)
     return res.status(400).json({ error: 'Email and password required' });
-  }
 
   try {
     const result = await pool.query(
       `SELECT id, hotel_id, name, email, password, role, department
        FROM users
        WHERE email = $1`,
-      [email.trim().toLowerCase()]
+      [email.trim()]
     );
 
-    if (result.rows.length === 0) {
-      console.log('❌ User not found');
+    if (result.rows.length === 0)
       return res.status(401).json({ error: 'Invalid credentials' });
-    }
 
     const user = result.rows[0];
-    const hash = user.password.trim();
 
-    const isMatch = await bcrypt.compare(password, hash);
-     
-    if (!isMatch) {
+    const isMatch = await bcrypt.compare(password, user.password.trim());
+    if (!isMatch)
       return res.status(401).json({ error: 'Invalid credentials' });
-    }
 
     const token = jwt.sign(
       {
@@ -44,7 +38,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '12h' }
     );
 
-    return res.json({
+    res.json({
       success: true,
       token,
       user: {
@@ -57,8 +51,8 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Staff login error:', err);
-    return res.status(500).json({ error: 'Login failed' });
+    console.error(err);
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
