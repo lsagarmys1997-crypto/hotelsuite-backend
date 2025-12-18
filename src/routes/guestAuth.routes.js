@@ -6,59 +6,48 @@ const { signToken } = require('../utils/jwt');
  * POST /api/guest/auth
  * Body: { room_number, last_name }
  */
-router.post('/auth', async (req, res) => {
-  const { room_number, last_name } = req.body;
+router.post('/login', async (req, res) => {
+  const { room_number, phone } = req.body;
 
-  if (!room_number || !last_name) {
-    return res.status(400).json({
-      error: 'Room number and last name are required'
-    });
+  if (!room_number || !phone) {
+    return res.status(400).json({ error: 'Room & phone required' });
   }
 
   try {
     const result = await pool.query(
       `
-      SELECT
-        g.id AS guest_id,
-        g.name AS guest_name,
-        r.id AS room_id,
-        r.room_number,
-        h.id AS hotel_id
+      SELECT g.id, g.name, g.phone, r.room_number, r.hotel_id
       FROM guests g
-      JOIN rooms r ON g.room_id = r.id
-      JOIN hotels h ON g.hotel_id = h.id
+      JOIN rooms r ON r.id = g.room_id
       WHERE r.room_number = $1
-        AND lower(g.name) LIKE lower($2)
-        AND g.checkout_at > now()
+        AND g.phone = $2
       `,
-      [room_number, `%${last_name}%`]
+      [room_number, phone]
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({
-        error: 'Invalid room number or guest name'
-      });
+      return res.status(401).json({ error: 'Invalid details' });
     }
 
     const guest = result.rows[0];
 
-    const token = signToken({
-      role: 'guest',
-      guest_id: guest.guest_id,
-      room_id: guest.room_id,
-      hotel_id: guest.hotel_id
-    });
+    const token = jwt.sign(
+      {
+        guest_id: guest.id,
+        hotel_id: guest.hotel_id
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
     res.json({
+      success: true,
       token,
-      guest: {
-        name: guest.guest_name,
-        room_number: guest.room_number
-      }
+      guest
     });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Guest login error:', err);
+    res.status(500).json({ error: 'Login failed' });
   }
 });
-
-module.exports = router;
