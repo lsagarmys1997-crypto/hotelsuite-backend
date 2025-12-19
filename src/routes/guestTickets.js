@@ -1,24 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
+const guestAuth = require('../middleware/guestAuth');
 
 /**
  * POST /api/guest/tickets
- * Guest creates a ticket
+ * Guest creates a ticket (SECURE)
  */
-router.post('/', async (req, res) => {
-  const {
-    hotel_id,
-    room_number,
-    department,
-    title,
-    description,
-    priority,
-    guest_name
-  } = req.body;
+router.post('/', guestAuth, async (req, res) => {
+  const { title, description, department, priority } = req.body;
+  const { guest_id, room_id, hotel_id } = req.guest;
 
   // Validation
-  if (!hotel_id || !room_number || !department || !title) {
+  if (!title || !department) {
     return res.status(400).json({
       error: 'Missing required fields'
     });
@@ -29,12 +23,12 @@ router.post('/', async (req, res) => {
       `
       INSERT INTO tickets (
         hotel_id,
-        room_number,
+        room_id,
+        guest_id,
         department,
         title,
         description,
         priority,
-        guest_name,
         status
       )
       VALUES ($1,$2,$3,$4,$5,$6,$7,'open')
@@ -42,12 +36,12 @@ router.post('/', async (req, res) => {
       `,
       [
         hotel_id,
-        room_number,
+        room_id,
+        guest_id,
         department,
         title,
         description || '',
-        priority || 'normal',
-        guest_name || 'Guest'
+        priority || 'normal'
       ]
     );
 
