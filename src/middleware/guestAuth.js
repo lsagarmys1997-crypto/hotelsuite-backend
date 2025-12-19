@@ -1,24 +1,24 @@
 const jwt = require('jsonwebtoken');
 
-module.exports = function guestAuth(req, res, next) {
-  const authHeader = req.headers.authorization;
+module.exports = (req, res, next) => {
+  const auth = req.headers.authorization;
 
-  if (!authHeader) {
-    return res.status(401).json({ error: 'Authorization header missing' });
-  }
-
-  const token = authHeader.split(' ')[1];
-  if (!token) {
-    return res.status(401).json({ error: 'Token missing' });
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
+    const token = auth.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Attach guest info from token
-    req.guest = decoded;
+    req.guest = {
+      guest_id: decoded.guest_id,
+      room_id: decoded.room_id,
+      hotel_id: decoded.hotel_id
+    };
+
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    return res.status(401).json({ error: 'Invalid token' });
   }
 };
