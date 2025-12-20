@@ -1,21 +1,22 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = (req, res, next) => {
-  const auth = req.headers.authorization;
-  console.log('AUTH HEADER:', req.headers.authorization);
-
-  if (!auth || !auth.startsWith('Bearer ')) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  const token = authHeader.split(' ')[1];
+
   try {
-    const token = auth.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // 🔥 Attach guest info
     req.guest = {
-      guest_id: decoded.guest_id,
-      room_id: decoded.room_id,
-      hotel_id: decoded.hotel_id
+      id: decoded.guest_id,
+      room_number: decoded.room_number,
+      hotel_id: decoded.hotel_id,
+      name: decoded.name
     };
 
     next();
