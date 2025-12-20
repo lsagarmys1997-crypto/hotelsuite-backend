@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
+
   if (!authHeader) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -11,16 +12,16 @@ module.exports = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 🔥 Attach guest info
+    // 🔥 MUST MATCH THIS EXACT STRUCTURE
     req.guest = {
-      id: decoded.guest_id,
-      room_number: decoded.room_number,
-      hotel_id: decoded.hotel_id,
-      name: decoded.name
+      guest_id: decoded.guest_id,
+      room_id: decoded.room_id,
+      hotel_id: decoded.hotel_id
     };
 
     next();
   } catch (err) {
+    console.error('Guest auth error:', err.message);
     return res.status(401).json({ error: 'Invalid token' });
   }
 };
