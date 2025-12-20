@@ -5,83 +5,48 @@ const staffAuth = require('../middleware/staffAuth');
 
 /**
  * GET /api/staff/tickets
- * Admin → all tickets
- * Staff → department tickets
+ * Staff fetch tickets (role aware)
  */
 router.get('/', staffAuth, async (req, res) => {
-  const { role, department, hotel_id } = req.user;
+  const { hotel_id, role, department } = req.staff;
 
   try {
-    let query;
-    let values;
+    let query = `
+      SELECT
+        t.id,
+        t.title,
+        t.description,
+        t.department,
+        t.status,
+        t.priority,
+        t.created_at,
+        r.room_number,
+        g.name AS guest_name
+      FROM tickets t
+      JOIN rooms r ON t.room_id = r.id
+      JOIN guests g ON t.guest_id = g.id
+      WHERE t.hotel_id = $1
+    `;
 
-    if (role === 'admin') {
-      query = `
-        SELECT t.*, r.room_number, g.name AS guest_name
-        FROM tickets t
-        LEFT JOIN rooms r ON t.room_id = r.id
-        LEFT JOIN guests g ON t.guest_id = g.id
-        WHERE t.hotel_id = $1
-        ORDER BY t.created_at DESC
-      `;
-      values = [hotel_id];
-    } else {
-      query = `
-        SELECT t.*, r.room_number, g.name AS guest_name
-        FROM tickets t
-        LEFT JOIN rooms r ON t.room_id = r.id
-        LEFT JOIN guests g ON t.guest_id = g.id
-        WHERE t.hotel_id = $1
-          AND t.department = $2
-        ORDER BY t.created_at DESC
-      `;
-      values = [hotel_id, department];
+    const params = [hotel_id];
+
+    // 👇 Non-admin staff only see their department
+    if (role !== 'admin') {
+      query += ` AND t.department = $2`;
+      params.push(department);
     }
 
-    const result = await pool.query(query, values);
+    query += ` ORDER BY t.created_at DESC`;
 
-    res.json({
-      count: result.rows.length,
-      tickets: result.rows
-    });
-
-  } catch (err) {
-    console.error('Staff tickets error:', err);
-    res.status(500).json({ error: 'Failed to fetch tickets' });
-  }
-});
-
-/**
- * PATCH /api/staff/tickets/:id/status
- * Update ticket status
- */
-router.patch('/:id/status', staffAuth, async (req, res) => {
-  const { status } = req.body;
-  const { id } = req.params;
-
-  if (!status) {
-    return res.status(400).json({ error: 'Status required' });
-  }
-
-  try {
-    const result = await pool.query(
-      `
-      UPDATE tickets
-      SET status = $1
-      WHERE id = $2
-      RETURNING *
-      `,
-      [status, id]
-    );
+    const result = await pool.query(query, params);
 
     res.json({
       success: true,
-      ticket: result.rows[0]
+      tickets: result.rows
     });
-
   } catch (err) {
-    console.error('Update ticket error:', err);
-    res.status(500).json({ error: 'Failed to update ticket' });
+    console.error('Staff tickets fetch error:', err);
+    res.status(500).json({ error: 'Failed to load tickets' });
   }
 });
 
